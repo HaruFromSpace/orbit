@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sync | Watch Together</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%2338bdf8'/></svg>">
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-mark">SYNC</span>
+                <span class="logo-sub">同步</span>
+            </div>
+            
+            <div class="room-info">
+                <span class="room-label">Room 房间</span>
+                <span id="roomNameDisplay" class="room-name">...</span>
+                <div id="participantAvatars" class="avatar-stack"></div>
+            </div>
+
+            <div class="header-controls">
+                <button class="control-btn music-btn dj-btn" id="musicModeBtn" title="Stream Tab/Music Audio">
+                    <span class="btn-content">Music Mode 音乐模式</span>
+                </button>
+                <button class="control-btn music-deck-btn dj-deck-btn" id="headerMusicDeckBtn" title="Open Music Audio Deck in persistent tab">
+                    <span class="btn-content">Music Deck 控制台</span>
+                </button>
+                <button class="control-btn jukebox-btn" id="jukeboxBtn" title="Song Queue & Search">
+                    <span class="btn-content">Jukebox 点歌台</span>
+                </button>
+                <button class="control-btn activities-btn" id="activitiesBtn" title="Mini-Games & Activities">
+                    <span class="btn-content">Activities 游戏</span>
+                </button>
+                <button class="control-btn share-btn" id="shareScreenBtn">
+                    <span class="btn-content">Share 共享屏幕</span>
+                </button>
+                <button class="control-btn" id="copyInviteBtn" onclick="copyInviteLink()">
+                    <span class="btn-content">Invite 复制邀请</span>
+                </button>
+                <button class="control-btn secondary" onclick="joinNewRoom()">
+                    <span class="btn-content">Switch 切换房间</span>
+                </button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- Video Section -->
+            <section class="video-container">
+                <canvas id="ambientGlow" class="ambient-glow"></canvas>
+                
+                <div class="video-wrapper">
+                    <video id="syncVideo" playsinline poster="offline.jpg"></video>
+                    <div class="music-mode-banner dj-mode-banner hidden" id="musicModeBanner">
+                        <div class="music-banner-title dj-banner-title">Music Mode Live 音乐模式在线</div>
+                        <div class="music-banner-sub dj-banner-sub" id="musicBannerSub">Streaming pure audio to room</div>
+                        <button class="control-btn primary mini" id="bannerMusicDeckBtn" style="margin-top: 10px;">Open Music Deck 打开控制台</button>
+                    </div>
+                </div>
+
+                <div class="video-controls-panel">
+                    <div class="quality-picker-group">
+                        <span class="quality-label">Share Quality 共享画质:</span>
+                        <select id="qualitySelect" class="glow-input quality-select">
+                            <option value="720p30" selected>Smooth 流畅 (720p 30fps) - Recommended</option>
+                            <option value="1080p30">Balanced 清晰 (1080p 30fps)</option>
+                            <option value="720p60">High-FPS 高帧率 (720p 60fps)</option>
+                            <option value="1080p60">Ultra 超清 (1080p 60fps)</option>
+                            <option value="480p30">Low 省流 (480p 30fps)</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Chat Section -->
+            <aside class="chat-container">
+                <div class="chat-header">
+                    <h3>Live Chat 聊天</h3>
+                </div>
+                
+                <!-- Sticker Panel (Hidden by default) -->
+                <div class="sticker-panel hidden" id="stickerPanel">
+                    <input type="text" id="gifSearchInput" class="glow-input gif-search" placeholder="Search GIFs... (搜索动图...)">
+                    <div class="sticker-grid" id="stickerGrid"></div>
+                </div>
+
+                <div class="chat-messages" id="chatMessages"></div>
+                
+                <div id="typingIndicator" class="typing-indicator hidden"></div>
+
+                <div class="chat-input-area">
+                    <div class="chat-emoji-panel hidden" id="chatEmojiPanel">
+                        <div class="emoji-grid" id="chatEmojiGrid"></div>
+                    </div>
+
+                    <button id="toggleChatEmojisBtn" class="icon-btn" title="Emojis" type="button">
+                        <span>😀</span>
+                    </button>
+                    <button id="toggleStickersBtn" class="icon-btn" title="Stickers" type="button">
+                        <span>🎁</span>
+                    </button>
+                    <input type="text" id="chatInput" class="glow-input chat-input" placeholder="Type a message... (输入消息...)">
+                    <button id="sendChatBtn" class="send-btn" type="button">
+                        <span>Send 发送</span>
+                    </button>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Jukebox Modal -->
+    <div class="modal hidden" id="jukeboxModal">
+        <div class="modal-content jukebox-modal-content">
+            <div class="jukebox-header">
+                <div class="jukebox-title-area">
+                    <h3>Jukebox 点歌台</h3>
+                    <span class="jukebox-dj-badge" id="currentMusicBadge">Music: None</span>
+                </div>
+                <div class="jukebox-header-actions">
+                    <button class="control-btn primary" id="openMusicDeckBtn" title="Open Music Audio Deck in a single dedicated tab">Music Deck 控制台</button>
+                    <button class="control-btn secondary" id="becomeMusicHostBtn">Host Music 接管音乐</button>
+                    <button class="modal-close-btn" id="closeJukeboxBtn" title="Close (ESC)">✕</button>
+                </div>
+            </div>
+
+            <!-- Search Area -->
+            <div class="jukebox-search-box">
+                <input type="text" id="songSearchInput" class="glow-input search-input" placeholder="Search songs or artists on YouTube... (搜索歌曲/歌手...)">
+                <button class="load-btn" id="searchSongsBtn">Search 搜索</button>
+            </div>
+            <div class="search-results-list hidden" id="searchResultsList"></div>
+
+            <!-- Queue Section -->
+            <div class="jukebox-section-title">
+                <span>Queue 播放队列</span>
+                <button class="control-btn secondary mini" id="playNextBtn">Next Song 下一首</button>
+            </div>
+            
+            <div class="now-playing-card" id="nowPlayingCard">
+                <div class="np-label">Now Playing 正在播放</div>
+                <div class="np-title" id="nowPlayingTitle">No song active</div>
+                <div class="np-details" id="nowPlayingDetails">Requested songs will appear here</div>
+                <div class="np-actions" id="nowPlayingActions"></div>
+            </div>
+
+            <div class="jukebox-queue-list" id="jukeboxQueueList">
+                <div class="queue-empty-msg">Queue is empty. Search songs above to add! (暂无点歌)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activities Modal -->
+    <div class="modal hidden" id="activitiesModal">
+        <div class="modal-content activities-modal-content">
+            <div class="activities-header">
+                <div class="activities-tabs">
+                    <button class="activity-tab active" data-tab="tictactoe">Tic-Tac-Toe 井字棋</button>
+                    <button class="activity-tab" data-tab="doodle">Doodle 涂鸦</button>
+                </div>
+                <button class="modal-close-btn" id="closeActivitiesBtn" title="Close (ESC)">✕</button>
+            </div>
+
+            <!-- Tab 1: Tic-Tac-Toe -->
+            <div class="activity-view" id="viewTictactoe">
+                <div class="ttt-container">
+                    <div class="ttt-header">
+                        <div class="ttt-status" id="tttStatus">Waiting for game...</div>
+                        <button class="ttt-reset-btn" id="tttResetBtn">Rematch 重来</button>
+                    </div>
+                    <div class="ttt-grid" id="tttGrid">
+                        <button class="ttt-cell" data-index="0"></button>
+                        <button class="ttt-cell" data-index="1"></button>
+                        <button class="ttt-cell" data-index="2"></button>
+                        <button class="ttt-cell" data-index="3"></button>
+                        <button class="ttt-cell" data-index="4"></button>
+                        <button class="ttt-cell" data-index="5"></button>
+                        <button class="ttt-cell" data-index="6"></button>
+                        <button class="ttt-cell" data-index="7"></button>
+                        <button class="ttt-cell" data-index="8"></button>
+                    </div>
+                    <div class="ttt-score" id="tttScore">
+                        <span>You: <strong id="myScore">0</strong></span>
+                        <span>Friend: <strong id="theirScore">0</strong></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 3: Doodle -->
+            <div class="activity-view hidden" id="viewDoodle">
+                <div class="doodle-container">
+                    <div class="doodle-toolbar">
+                        <div class="doodle-colors">
+                            <button class="color-dot active" data-color="#f8fafc"></button>
+                            <button class="color-dot" data-color="#38bdf8"></button>
+                            <button class="color-dot" data-color="#facc15"></button>
+                            <button class="color-dot" data-color="#f87171"></button>
+                            <button class="color-dot" data-color="#c084fc"></button>
+                        </div>
+                        <div class="doodle-tools">
+                            <button class="doodle-tool-btn" id="eraserBtn">Eraser 橡皮</button>
+                            <button class="doodle-tool-btn" id="clearCanvasBtn">Clear 清屏</button>
+                        </div>
+                    </div>
+                    <div class="doodle-canvas-wrap">
+                        <canvas id="doodleCanvas" width="460" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Join Modal -->
+    <div class="modal" id="joinModal">
+        <div class="modal-content">
+            <h2>Enter the Room (进入房间)</h2>
+            <p>Sync up and watch together seamlessly. (同步观看)</p>
+            <div class="input-stack">
+                <input type="text" id="roomInput" class="glow-input" placeholder="Room ID (房间号)">
+                <input type="text" id="usernameInput" class="glow-input" placeholder="Your Name (你的名字)">
+            </div>
+            <button class="enter-btn" onclick="connectToRoom()">
+                <span>Connect 连接</span>
+            </button>
+        </div>
+    </div>
+
+    <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
+    <script src="script.js"></script>
+    <script src="activities.js"></script>
+    <script src="jukebox.js"></script>
+</body>
+</html>

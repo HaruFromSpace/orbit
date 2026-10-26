@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watch Party - Music Audio Deck 音乐控制台</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 24px;
+            background: #030508;
+        }
+
+        .dj-deck-container {
+            width: 100%;
+            max-width: 640px;
+            background: rgba(10, 14, 23, 0.95);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .deck-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 16px;
+        }
+
+        .deck-title-area h2 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .deck-room-badge {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--success);
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            padding: 3px 8px;
+            border-radius: var(--radius-sm);
+            text-transform: uppercase;
+        }
+
+        .deck-guide-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 14px 16px;
+            font-size: 0.82rem;
+            line-height: 1.5;
+            color: var(--text-secondary);
+        }
+
+        .deck-guide-card ol {
+            margin: 6px 0 0 18px;
+            padding: 0;
+        }
+
+        .deck-guide-card li {
+            margin-bottom: 4px;
+        }
+
+        .deck-guide-highlight {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .player-wrapper {
+            position: relative;
+            background: #000;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            aspect-ratio: 16 / 9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #yt-player-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        #yt-player {
+            width: 100%;
+            height: 100%;
+        }
+
+        .deck-idle-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(3, 5, 8, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+            gap: 12px;
+            z-index: 5;
+        }
+
+        .deck-now-playing-info {
+            background: rgba(56, 189, 248, 0.04);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            border-radius: var(--radius-md);
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .deck-np-text {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .deck-np-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .deck-np-meta {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .deck-controls-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .deck-toggle-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .deck-upcoming {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .deck-upcoming-header {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .deck-upcoming-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-height: 140px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="dj-deck-container">
+        <!-- Header -->
+        <div class="deck-header">
+            <div class="deck-title-area">
+                <h2>Music Deck 音乐控制台</h2>
+                <span class="deck-room-badge" id="deckRoomBadge">Room: Connecting...</span>
+            </div>
+            <button class="control-btn secondary" id="readyAudioBtn">Enable Autoplay 激活自动播放</button>
+        </div>
+
+        <!-- Instructions Guide -->
+        <div class="deck-guide-card">
+            <div class="deck-guide-highlight">Single Tab Streaming Instructions (单标签页音乐说明):</div>
+            <ol>
+                <li>Click <span class="deck-guide-highlight">Enable Autoplay (激活自动播放)</span> above once so your browser allows background playback.</li>
+                <li>In your Watch Party window, click <span class="deck-guide-highlight">Music Mode 音乐模式</span> and choose <span class="deck-guide-highlight">this tab</span> (make sure to check <i>"Share tab audio"</i>).</li>
+                <li>Leave this tab open. Songs added to the Jukebox will automatically load, play, and advance to the next song hands-free!</li>
+            </ol>
+        </div>
+
+        <!-- Embedded YouTube Player -->
+        <div class="player-wrapper">
+            <div id="yt-player-container">
+                <div id="yt-player"></div>
+            </div>
+            <div class="deck-idle-overlay" id="idleOverlay">
+                <div style="font-weight: 600; color: var(--text-primary);">Waiting for song requests... (等待点歌)</div>
+                <div style="font-size: 0.8rem; color: var(--text-secondary);">Add songs in the Watch Party Jukebox or queue a track to begin.</div>
+            </div>
+        </div>
+
+        <!-- Now Playing Card & Controls -->
+        <div class="deck-now-playing-info">
+            <div class="deck-np-text">
+                <div class="deck-np-title" id="deckNowPlayingTitle">No song active (暂无播放)</div>
+                <div class="deck-np-meta" id="deckNowPlayingMeta">Requests will automatically play here</div>
+            </div>
+            <button class="control-btn secondary mini" id="deckSkipBtn">Next Song 下一首</button>
+        </div>
+
+        <!-- Options Row -->
+        <div class="deck-controls-row">
+            <label class="deck-toggle-label">
+                <input type="checkbox" id="autoAdvanceToggle" checked>
+                <span>Auto-play next queued song when finished (自动连播下一首)</span>
+            </label>
+            <span style="font-size: 0.75rem; color: var(--text-muted);" id="deckStatusText">Status: Standby</span>
+        </div>
+
+        <!-- Upcoming Queue Preview -->
+        <div class="deck-upcoming">
+            <div class="deck-upcoming-header">Upcoming Queue (接下来播放)</div>
+            <div class="deck-upcoming-list" id="deckUpcomingList">
+                <div style="font-size: 0.78rem; color: var(--text-muted); padding: 8px;">Queue is empty. (队列为空)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const urlParams = new URLSearchParams(window.location.search);
+        const room = urlParams.get('room') || 'default';
+
+        const deckRoomBadge = document.getElementById('deckRoomBadge');
+        const readyAudioBtn = document.getElementById('readyAudioBtn');
+        const idleOverlay = document.getElementById('idleOverlay');
+        const deckNowPlayingTitle = document.getElementById('deckNowPlayingTitle');
+        const deckNowPlayingMeta = document.getElementById('deckNowPlayingMeta');
+        const deckSkipBtn = document.getElementById('deckSkipBtn');
+        const autoAdvanceToggle = document.getElementById('autoAdvanceToggle');
+        const deckStatusText = document.getElementById('deckStatusText');
+        const deckUpcomingList = document.getElementById('deckUpcomingList');
+
+        deckRoomBadge.textContent = 'Room: ' + room;
+
+        let player = null;
+        let isYtReady = false;
+        let activeVideoId = null;
+        let pendingVideoId = null;
+
+        // Join room and request state
+        socket.on('connect', () => {
+            deckStatusText.textContent = 'Status: Connected';
+            socket.emit('joinRoom', { room, username: 'DJ-Deck' });
+            socket.emit('jukeboxGet', { room });
+        });
+
+        // Load YouTube IFrame API
+        const tag = document.createElement('script');
+        tag.src = 'https://www.youtube.com/iframe_api';
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        window.onYouTubeIframeAPIReady = function() {
+            player = new YT.Player('yt-player', {
+                height: '100%',
+                width: '100%',
+                playerVars: {
+                    autoplay: 1,
+                    controls: 1,
+                    rel: 0,
+                    modestbranding: 1
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange,
+                    'onError': onPlayerError
+                }
+            });
+        };
+
+        function onPlayerReady(event) {
+            isYtReady = true;
+            try {
+                player.setVolume(100);
+            } catch (e) {}
+            if (pendingVideoId) {
+                playVideo(pendingVideoId);
+                pendingVideoId = null;
+            }
+        }
+
+        function playVideo(videoId) {
+            if (!isYtReady || !player) {
+                pendingVideoId = videoId;
+                return;
+            }
+            if (activeVideoId === videoId) return;
+
+            activeVideoId = videoId;
+            idleOverlay.style.display = 'none';
+            deckStatusText.textContent = 'Status: Playing';
+
+            try {
+                player.setVolume(100);
+                player.loadVideoById({ videoId, suggestedQuality: 'hd720' });
+                player.playVideo();
+            } catch (e) {
+                console.error('Error loading video:', e);
+            }
+        }
+
+        function stopPlayback() {
+            activeVideoId = null;
+            idleOverlay.style.display = 'flex';
+            deckStatusText.textContent = 'Status: Idle';
+            if (isYtReady && player && player.stopVideo) {
+                try { player.stopVideo(); } catch (e) {}
+            }
+        }
+
+        let isAdvancing = false;
+        let lastEndedVideoId = null;
+
+        function onPlayerStateChange(event) {
+            if (event.data === YT.PlayerState.ENDED) {
+                deckStatusText.textContent = 'Status: Song finished';
+                // Strict check: Only advance ONCE per unique videoId
+                if (autoAdvanceToggle.checked && activeVideoId && lastEndedVideoId !== activeVideoId && !isAdvancing) {
+                    lastEndedVideoId = activeVideoId;
+                    isAdvancing = true;
+                    deckStatusText.textContent = 'Status: Advancing to next song...';
+                    setTimeout(() => {
+                        socket.emit('jukeboxPlayNext', { room });
+                        setTimeout(() => { isAdvancing = false; }, 2500);
+                    }, 1200);
+                }
+            } else if (event.data === YT.PlayerState.PLAYING) {
+                isAdvancing = false;
+                deckStatusText.textContent = 'Status: Streaming audio';
+            } else if (event.data === YT.PlayerState.PAUSED) {
+                deckStatusText.textContent = 'Status: Paused';
+            }
+        }
+
+        function onPlayerError(event) {
+            console.warn('YouTube Player error code:', event.data);
+            deckStatusText.textContent = 'Status: Video unavailable, skipping in 2s...';
+            if (autoAdvanceToggle.checked && !isAdvancing) {
+                isAdvancing = true;
+                setTimeout(() => {
+                    socket.emit('jukeboxPlayNext', { room });
+                    setTimeout(() => { isAdvancing = false; }, 2500);
+                }, 2000);
+            }
+        }
+
+        // Ready / Autoplay unlock button
+        readyAudioBtn.addEventListener('click', () => {
+            readyAudioBtn.textContent = 'Autoplay Enabled 已就绪';
+            readyAudioBtn.classList.remove('secondary');
+            readyAudioBtn.classList.add('primary');
+            readyAudioBtn.disabled = true;
+            if (isYtReady && player && activeVideoId) {
+                try { player.playVideo(); } catch (e) {}
+            }
+        });
+
+        // Skip to next song
+        deckSkipBtn.addEventListener('click', () => {
+            socket.emit('jukeboxPlayNext', { room });
+        });
+
+        // Handle Jukebox State updates from room
+        socket.on('jukeboxUpdate', (state) => {
+            const nowPlaying = state.nowPlaying;
+            const queue = state.queue || [];
+
+            if (nowPlaying && nowPlaying.videoId) {
+                deckNowPlayingTitle.textContent = nowPlaying.title;
+                deckNowPlayingMeta.textContent = `${nowPlaying.author} • ${nowPlaying.timestamp || ''} • Requested by ${nowPlaying.user}`;
+                playVideo(nowPlaying.videoId);
+            } else {
+                deckNowPlayingTitle.textContent = 'No song active (暂无播放)';
+                deckNowPlayingMeta.textContent = 'Add songs in the Jukebox to start';
+                stopPlayback();
+            }
+
+            // Render upcoming queue preview
+            deckUpcomingList.innerHTML = '';
+            if (queue.length === 0) {
+                deckUpcomingList.innerHTML = '<div style="font-size: 0.78rem; color: var(--text-muted); padding: 8px;">Queue is empty. (队列为空)</div>';
+            } else {
+                queue.forEach((song, idx) => {
+                    const row = document.createElement('div');
+                    row.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; border-radius: var(--radius-sm); background: rgba(255,255,255,0.02); font-size: 0.78rem;';
+                    
+                    const t = document.createElement('span');
+                    t.textContent = `${idx + 1}. ${song.title}`;
+                    t.style.cssText = 'white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 380px; color: var(--text-primary);';
+
+                    const u = document.createElement('span');
+                    u.textContent = `${song.user}`;
+                    u.style.cssText = 'color: var(--text-muted); font-size: 0.72rem; flex-shrink: 0;';
+
+                    row.appendChild(t);
+                    row.appendChild(u);
+                    deckUpcomingList.appendChild(row);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
