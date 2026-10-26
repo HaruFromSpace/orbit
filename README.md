@@ -2,6 +2,8 @@
 
 A web app for watching videos in sync with a friend. I built it to watch movies with a friend who lives in another country.
 
+It's most useful when a site like YouTube is restricted where the other person lives. One person plays the video and shares their screen, and everyone in the room watches together.
+
 Everyone in a room sees the same play, pause and seek. Next to the video there's a chat with GIFs, voice and video calls, screen sharing, a shared music queue, and two small games (tic-tac-toe and a shared doodle board).
 
 ## How it works
